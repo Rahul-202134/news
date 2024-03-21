@@ -1,82 +1,78 @@
-import React, { useEffect, useState } from 'react';
-import NewsItem from './NewsItem';
-import Spinner from './Spinner';
-import InfiniteScroll from 'react-infinite-scroll-component';
+import { React, useState, useEffect } from "react";
+import NewsItem from "./NewsItem";
+//import Image from "../Images/News1.jpg";
+import InfiniteScroll
+	from "react-infinite-scroll-component";
 
-const News = (props) => {
-  const [articles, setArticles] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [totalResults, setTotalResults] = useState(0);
+function News(props) {
+	let category = props.category;
+	let [articles, setArticles] = useState([]);
+	let [totalResults, setTotalResults] = useState(0);
+	let [page, setPage] = useState(1);
 
-  const fetchNews = async () => {
-    props.setProgress(10);
-    const url = `https://newsapi.org/v2/top-headlines?country=${props.country}&category=${props.category}&apiKey=${props.apiKey}&pageSize=${props.pageSize}&page=${page}`;
+	let resultNews = async () => {
+		const url =
+`https://newsapi.org/v2/top-headlines?country=in&category=${category}&page=${page}&apiKey=ecfaf9eaaa8d40a5b5d769210f5ee616`;
+		let data = await fetch(url);
+		let parsedData = await data.json();
+		setArticles(parsedData.articles);
+		setTotalResults(parsedData.totalResults);
+	};
 
-    setLoading(true);
-    let data = await fetch(url);
-    props.setProgress(30);
-    let parsedData = await data.json();
-    props.setProgress(70);
-    setArticles(parsedData.articles);
-    setTotalResults(parsedData.totalResults);
-    setLoading(false);
-    props.setProgress(100);
-  }
+	useEffect(() => {
+		resultNews();
+	}, []);
 
-  useEffect(() => {
-    fetchNews();
-  });
+	let fetchData = async () => {
+		const url =
+`https://newsapi.org/v2/top-headlines?country=in&category=${category}&page=${page + 1
+			}&apiKey=73b64103eaa24e84b390add5993d267a`;
+		setPage(page + 1);
+		let data = await fetch(url);
+		let parsedData = await data.json();
+		setArticles(articles.concat(parsedData.articles));
+	};
 
-  const handlePrevClick = async () => {
-    setPage(page - 1);
-    fetchNews();
-  }
-  const handleNextClick = async () => {
-    setPage(page + 1);
-    fetchNews();
-  }
-  const fetchMoreNews = async () => {
-    setPage(page + 1);
-    const url = `https://newsapi.org/v2/top-headlines?country=${props.country}&category=${props.category}&apiKey=${props.apiKey}&pageSize=${props.pageSize}&page=${page}`;
-    let data = await fetch(url);
-    let parsedData = await data.json();
-    setArticles(articles.concat(parsedData.articles));
-    setTotalResults(parsedData.totalResults);
-
-  };
-
-  return (
-    <div className="container text-center" style={{ marginTop: '100px' }}>
-      <h1>Top News Of India</h1>
-      {loading ? <Spinner /> : null}
-      <InfiniteScroll
-        dataLength={articles.length}
-        next={fetchMoreNews}
-        hasMore={articles.length !== totalResults}
-        loader={<Spinner />}
-      >
-        <div className="row">
-          {articles.map((element) => {
-            return <div className="col-md-4" key={element.url}>
-              <NewsItem
-                title={element.title ? element.title : ''}
-                description={element.description ? element.description : ''}
-                imageurl={element.urlToImage}
-                newsUrl={element.url}
-                author={element.author}
-                date={element.publishedAt}
-              />
-            </div>
-          })}
-        </div>
-        <div className='container d-flex justify-content-between'>
-          <button type='submit' disabled={page <= 1} className='btn btn-dark' onClick={handlePrevClick}>&laquo; Previous</button>
-          <button type='submit' className='btn btn-dark' onClick={handleNextClick}>Next&raquo;</button>
-        </div>
-      </InfiniteScroll>
-    </div>
-  );
-};
+	return (
+		<InfiniteScroll
+			//This is important field to render the next data
+			dataLength={articles.length}
+			next={fetchData}
+			hasMore={
+				articles.length < totalResults
+			}
+			loader={
+				<h4 className="text-center">
+					Loading...
+				</h4>}
+			endMessage={
+				<p style={{ textAlign: "center" }}>
+					<b>Yay! You have seen it all</b>
+				</p>
+			}
+		>
+			<div className="container my-3">
+				<div className="row">
+					{articles.map((element) => {
+						return (
+							<div className="col-md-4" key={element.url}>
+								<NewsItem
+									sourceName={element.source.name}
+									title={element.title}
+									desc={element.description}
+									imageURL=
+									{element.urlToImage ?
+										element.urlToImage :
+										Image}
+									newsUrl={element.url}
+								/>
+							</div>
+						);
+					})}
+				</div>
+			</div>
+		</InfiniteScroll>
+	);
+}
 
 export default News;
